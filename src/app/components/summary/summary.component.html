@@ -1,0 +1,117 @@
+<nz-row style = "width : 100%">
+    <nz-col nzSpan = "24" style = "padding : 8px 4px 8px 8px; background: #fff;" class = "execSummary">
+        <nz-table #expandTable [nzData]="table_data" nzTableLayout="fixed">
+            <thead>
+                <tr>
+                    <th [nzWidth]="'1%'" [nzAlign]="'center'" nzWidth="60px"></th>
+                    <th [nzWidth]="'6%'" >APPNAME</th>
+                    <th [nzWidth]="'3%'" [nzAlign]="'center'">COUNTRY</th>
+                    <th [nzWidth]="'3%'" [nzAlign]="'center'">TOTAL SERVER</th>
+                    <th [nzWidth]="'5%'" [nzAlign]="'center'" *ngFor="let header of envSchema">
+                        <p class ="table_label">{{header.head}}</p>
+                        <span nz-icon [nzType] = "header.shape" nzTheme = "outline"></span>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <ng-container *ngFor="let data of expandTable.data; index as i">
+                    <ng-container *ngFor="let item of mapOfExpanededData[data.key]; index as j">
+                     <!--Parent Row... -->
+                     <ng-container *ngIf="((item.parent) || !item.parent) && j == 0">
+                        <ng-template 
+                            [ngTemplateOutlet]="td_with_data" [ngTemplateOutletContext]="{data : data, item : item, coloumHeader : envSchema}">
+                            </ng-template>
+                      </ng-container>
+
+                      <!-- Parent Expand Row....-->
+                      <tr *ngIf="((item.parent && item.parent.expand))">
+                        <ng-template
+                            [ngTemplateOutlet]="normal_table" [ngTemplateOutletContext]="{data : GroupAll(data['data']), coloumHeader : envSchema}">
+                        </ng-template>
+                      </tr>
+                      <!--Children row....-->
+                      <ng-container *ngIf="((item.parent) || !item.parent) && j > 0">
+                        <ng-template 
+                            [ngTemplateOutlet]="td_with_data" [ngTemplateOutletContext]="{data : item, item : item, coloumHeader : envSchema}">
+                            </ng-template>
+                      </ng-container>
+                      <!--Sub rows for each countries....-->
+                      <tr *ngIf="((item.parent) || !item.parent) && j > 0 && item.expand">
+                        <ng-template 
+                            [ngTemplateOutlet]="normal_table" [ngTemplateOutletContext]="{data : GroupAll(item['data']), coloumHeader : envSchema}">
+                            </ng-template>
+                      </tr>
+                      <tr *ngIf ="IfDivIsExpanded(item.APPID , item.COUNTRY)">
+                        <!-- Insert expand table-->
+                        Testing ahh....
+                      </tr>
+                    </ng-container>
+                  </ng-container>
+   
+            </tbody>
+        </nz-table>
+    </nz-col>
+</nz-row>
+
+<ng-template #td_with_data let-data = "data" let-item ="item" let-envSchema ="coloumHeader">
+    <tr>
+        <td
+          [nzIndentSize]="item.level! * 20"
+          [nzShowExpand]="!!item.children"
+          [(nzExpand)]="item.expand"
+          (nzExpandChange)="collapse(mapOfExpanededData[data.key], item, $event)"
+        >
+        </td>
+        <td>{{ item.APPID }}</td>
+        <td>{{item.COUNTRY}}</td>
+        <td [nzAlign]="'center'"><nz-tag [nzColor] = "'default'"><p class = "table_label">{{item.TOTAL}}</p></nz-tag></td>
+            <ng-container *ngFor = "let header of envSchema">
+                <!--No Data-->
+                <ng-container *ngIf = "!data['data'][header.head]">
+                    <td ngClass = "divgrey"></td>
+                </ng-container>
+                <!--Have Data-->
+                <ng-container *ngIf = "data['data'][header.head]">
+                    <td style ="padding : 0px!important">
+                        <div nz-col nzSpan = "24" style="padding :1px">
+                            <div nz-row style = "margin-bottom: 0px;">
+                                <ng-container *ngFor = "let status of data['data'][header.head]['status']">
+                                    <div nz-col [nzSpan]="24/data['data'][header.head]['status'].length" (click) = "updateDivExpand(status,data['data'][header.head]['status'],item.APPID,item.COUNTRY,header.head,status['status'])"
+                                    [ngClass]="giveNumberColor(data['data'][header.head][status['status']],status['status'])">
+                                        <div nz-row style = "width: 100%;">
+                                            <div nz-col nzSpan = "2" >
+                                                <p nz-icon [nzType]="status['expand'] ? 'minus-square': 'expand-alt'" nzTheme="outline"></p>
+                                            </div>
+                                            <div nz-col nzSpan = "22">
+                                                <p class = "number_label">{{data['data'][header.head][status['status']]}}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </ng-container>
+                            </div>
+                        </div>
+                    </td>
+                </ng-container>
+            </ng-container>
+      </tr>
+</ng-template>
+
+<ng-template #normal_table let-data = "data" let-header = "coloumHeader">
+   
+        <!--Follo the TH in the first table....-->
+        <td [colSpan]="total_header + header.length">
+            <nz-table #expandedTable [nzData]="data" [nzShowPagination]="false" nzTableLayout="fixed">
+                <thead>
+                    <tr>
+                        <th [nzWidth]="'80%'">HOSTNAME</th>
+                        <th *ngFor = "let head of header">{{head.head}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor = "let row of expandedTable.data">
+                        <td>{{row.hostname}}</td>
+                    </tr>
+                </tbody>
+            </nz-table>
+        </td>
+</ng-template>
